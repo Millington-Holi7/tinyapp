@@ -7,8 +7,12 @@ const urlDetabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-app.get("/", (req,res) => {
-  res.send("Hello!");
+app.get("/", (req,res) => { //if this ("/") is inputted
+  res.send("Hello!"); // show this
+});
+
+app.get("/urls.json", (req, res) => {
+  res.json(urlDetabase)
 });
 
 app.listen(PORT, () => {

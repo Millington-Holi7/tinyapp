@@ -21,7 +21,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const { id } = req.params; // Extracting the id from the route parameter
-  const longURL = urlDatabase[id]; // Attempt to retrieve the longURL using the id
+  const longURL = urlDatabase[id];//Attempt to retrieve the longURL using the id
   if (!longURL) { // Check if the longURL does not exist for the given id  
     return res.status(404).send("The short URL does not exist.");
   }
@@ -36,10 +36,8 @@ app.get("/u/:id", (req, res) => { //redirect to the URL inputted
 
 app.post("/urls", (req, res) => {
   console.log(req.body); //Log the POST request body to the console
-  id = generateRandomString();
-  console.log(id);
+   let id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
-  console.log(urlDatabase)
   return res.redirect(`/urls/${id}`) //Redirect to another page 
 })
 

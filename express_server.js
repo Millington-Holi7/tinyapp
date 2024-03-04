@@ -25,7 +25,7 @@ app.get("/urls/:id", (req, res) => {
   if (!longURL) { // Check if the longURL does not exist for the given id  
     return res.status(404).send("The short URL does not exist.");
   }
-  const templateVars = { id:id, longURL:longURL }
+  const templateVars = { id: id, longURL: longURL }
   res.render("urls_show", templateVars)
 });
 
@@ -36,7 +36,7 @@ app.get("/u/:id", (req, res) => { //redirect to the URL inputted
 
 app.post("/urls", (req, res) => {
   console.log(req.body); //Log the POST request body to the console
-   let id = generateRandomString();
+  let id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
   return res.redirect(`/urls/${id}`) //Redirect to another page 
 })
@@ -44,8 +44,18 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
-  console.log(urlDatabase);
   return res.redirect(`/urls`);
+})
+
+app.post("/urls/:id/edit", (req, res) => {
+  const id = req.params.id;
+  urlDatabase[id] = req.body.longURL;
+  return res.redirect(`/urls`)
+})
+
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  return res.redirect(`/urls/${id}`)
 })
 
 app.listen(PORT, () => {

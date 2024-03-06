@@ -38,6 +38,11 @@ app.get("/u/:id", (req, res) => { //redirect to the URL inputted
   res.redirect(longURL);
 })
 
+app.get("/register", (req, res) => {
+  const templateVars = { username: req.cookies["username"] }
+  res.render("register", templateVars);
+})
+
 app.post("/urls", (req, res) => {
   console.log(req.body); //Log the POST request body to the console
   let id = generateRandomString();
@@ -63,7 +68,7 @@ app.post("/login", (req, res) => { //username login form
 })
 
 app.post("/logout", (req, res) => { //username login form 
-  res.clearCookie('username', req.body.username);
+  res.clearCookie('username');
   return res.redirect(`/urls`);
 })
 

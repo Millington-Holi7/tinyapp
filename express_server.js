@@ -65,6 +65,12 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 })
 
+app.get("/login", (req, res) => {
+  const currentUser = users[req.cookies["user_id"]]
+  const templateVars = { user: currentUser }
+  res.render("./login", templateVars)
+})
+
 app.post("/urls", (req, res) => {
   let id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
@@ -96,7 +102,7 @@ app.post("/login", (req, res) => { //username login form
 
 app.post("/logout", (req, res) => { //username login form 
   res.clearCookie('user_id');
-  return res.redirect(`/urls`);
+  return res.redirect(`/login`);
 })
 
 

@@ -89,22 +89,27 @@ app.post("/urls/:id", (req, res) => {
   return res.redirect(`/urls`)
 })
 
-app.post("/login", (req, res) => { //username login form 
-  const { email } = req.body
+app.post("/login", (req, res) => { //user login form .
+  console.log("req.body:", req.body);
+  const { email, password } = req.body
   const user = getUserByEmail(email);
   if (user) {
-    res.cookie('user_id', user.id);
-    return res.redirect(`/urls`);
+    if (password === users[user.id].password) {
+      res.cookie('user_id', user.id);
+      return res.redirect(`/urls`);
+    } else {
+      res.status(400).send("Password doesn't match.");
+    }
   } else {
+    res.status(400).send("Email not found.");
     return res.redirect(`/register`);
   }
 })
 
-app.post("/logout", (req, res) => { //username login form 
+app.post("/logout", (req, res) => { //user login form 
   res.clearCookie('user_id');
   return res.redirect(`/login`);
 })
-
 
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
@@ -121,7 +126,7 @@ app.post("/register", (req, res) => {
 
   // Everything is fine; proceed with user creation
   const id = generateRandomString();
-  users[id] = { id, email, password }; // Password should be hashed in a real app
+  users[id] = { id, email, password };
 
   // Set only the user_id in cookie
   res.cookie('user_id', id);
@@ -129,6 +134,7 @@ app.post("/register", (req, res) => {
   // Redirect to '/urls' after successful registration
   res.redirect("/urls");
 });
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);

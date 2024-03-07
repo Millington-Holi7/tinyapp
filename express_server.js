@@ -55,9 +55,11 @@ app.get("/u/:id", (req, res) => { //redirect to the URL inputted
 app.get("/register", (req, res) => {
   if (req.cookies["user_id"]) {
     // If user is already logged in, redirect to /urls or another relevant page
-    return res.redirect("/urls");
+    const currentUser = users[req.cookies["user_id"]]
+    if (currentUser) {
+      return res.redirect("/urls");
+    }
   }
-  // The rest of your existing code follows
   const currentUser = users[req.cookies["user_id"]]
   const templateVars = { user: currentUser }
   res.render("register", templateVars);
@@ -83,9 +85,9 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/login", (req, res) => { //username login form 
   const { email } = req.body
-  const emailExists = Object.values(users).some(user => user.email === email);
-  if (emailExists) {
-    // res.cookie('user.email', req.body.email);
+  const user = getUserByEmail(email);
+  if (user) {
+    res.cookie('user_id', user.id);
     return res.redirect(`/urls`);
   } else {
     return res.redirect(`/register`);
@@ -93,9 +95,11 @@ app.post("/login", (req, res) => { //username login form
 })
 
 app.post("/logout", (req, res) => { //username login form 
-  res.clearCookie('user');
+  res.clearCookie('user_id');
   return res.redirect(`/urls`);
 })
+
+
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
 
@@ -105,9 +109,8 @@ app.post("/register", (req, res) => {
   }
 
   // Validation: Check if email already exists
-  const emailExists = Object.values(users).some(user => user.email === email);
-  if (emailExists) {
-    return res.status(400).send("Email already in use.");
+  if (getUserByEmail(email)) {
+    res.status(400).send("Email already in use.");
   }
 
   // Everything is fine; proceed with user creation
@@ -134,3 +137,11 @@ function generateRandomString() { // generate random short URL
   return result;
 }
 
+const getUserByEmail = (email) => {
+  for (const userId in users) {
+    if (users[userId].email === email) {
+      return users[userId];
+    }
+  }
+  return null;
+}

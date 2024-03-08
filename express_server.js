@@ -35,6 +35,10 @@ app.get("/urls/new", (req, res) => {
   const currentUser = users[req.cookies["user_id"]]
   const templateVars = { user: currentUser }
   res.render("urls_new", templateVars);
+
+  if (!currentUser) {
+    res.redirect("./login");
+  }
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -45,13 +49,25 @@ app.get("/urls/:id", (req, res) => {
   }
   const currentUser = users[req.cookies["user_id"]]
   const templateVars = { id: id, longURL: longURL, user: currentUser }
+
+  
   res.render("urls_show", templateVars)
 });
 
 app.get("/u/:id", (req, res) => { //redirect to the URL inputted
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
-})
+
+  const shortURLId = req.params.id; // Extract the :id from the request URL
+  const urlObject = urlsDatabase[shortURLId]; // Assuming urlsDatabase is where you store your URLs
+
+  if (!urlObject) {
+    // The short URL ID does not exist in the database, send an error message
+    res.status(404).send('<html><body><h1>The requested short URL does not exist.</h1></body></html>');
+  } else {
+    const longURL = urlObject.longURL;
+    res.redirect(longURL);
+  }
+});
+
 app.get("/register", (req, res) => {
   if (req.cookies["user_id"]) {
     // If user is already logged in, redirect to /urls or another relevant page
@@ -69,12 +85,20 @@ app.get("/login", (req, res) => {
   const currentUser = users[req.cookies["user_id"]]
   const templateVars = { user: currentUser }
   res.render("./login", templateVars)
+  return res.redirect("./urls")
 })
 
 app.post("/urls", (req, res) => {
-  let id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
-  return res.redirect(`/urls/${id}`) //Redirect to another page 
+  const currentUser = users[req.cookies["user_id"]]
+  if (!currentUser) {
+    // User is not logged in, so we send an HTML response with an error message
+    res.status(401).send('<html><body><h1>You need to be logged in to shorten URLs!</h1></body></html>');
+  } else {
+    let id = generateRandomString();
+    urlDatabase[id] = req.body.longURL;
+    return res.redirect(`/urls/${id}`) //Redirect to another page 
+  }
+
 })
 
 app.post("/urls/:id/delete", (req, res) => {

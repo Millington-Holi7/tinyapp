@@ -1,10 +1,9 @@
+const {getUserByEmail} = require('./helpers.js');
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bcrypt = require("bcryptjs");
 const cookieSession = require('cookie-session')
-const cookieParser = require('cookie-parser')
-app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ["one", "two", "three"],
@@ -125,7 +124,7 @@ app.post("/urls/:id/delete", (req, res) => {
   const currentUser = users[req.session.user_id];
   const id = req.params.id;
   const urlUserId = urlDatabase[id];
-  
+
   if (currentUser.id !== urlUserId.userID) {
     return res.status(401).send('<html><body><h1>Only the creator can delete this link!</h1></body></html>');
   }
@@ -147,8 +146,7 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/login", (req, res) => { //user login form .
   const { email, password } = req.body
-  const user = getUserByEmail(email);
-  console.log(user)
+  const user = getUserByEmail(email,users);
   if (user) {
     if (bcrypt.compareSync(password, user.password)) {
       req.session.user_id = user.id;
@@ -175,7 +173,7 @@ app.post("/register", (req, res) => {
   }
 
   // Validation: Check if email already exists
-  if (getUserByEmail(email)) {
+  if (getUserByEmail(email,users)) {
     res.status(400).send("Email already in use.");
   }
 
@@ -201,16 +199,6 @@ function generateRandomString() { // generate random short URL
   }
   return result;
 }
-
-const getUserByEmail = (email) => {
-  for (const userId in users) {
-    if (users[userId].email === email) {
-      return users[userId];
-    }
-  }
-  return null;
-}
-
 
 const urlsForUser2 = function (userId) {
   const output = {};

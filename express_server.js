@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const bcrypt = require("bcryptjs");
 const cookieParser = require('cookie-parser')
 app.use(cookieParser());
 
@@ -24,12 +25,12 @@ const users = {
   aJ48lW: {
     id: "aJ48lW",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: "$2a$10$7fNh4p70DtZ9vGatFb4jhet6xUz.FSinudwfjTDMY2OHcnZfXYHyW",//love
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: "$2a$10$WMC01.YqhqiTuyW0Cdctvut234qs5ukMevFwcsphiU8yLcBRTy5Ke", //dishwasher-funk
   },
 }
 
@@ -94,11 +95,17 @@ app.get("/register", (req, res) => {
 })
 
 app.get("/login", (req, res) => {
-  const currentUser = users[req.cookies["user_id"]]
-  const templateVars = { user: currentUser }
-  res.render("./login", templateVars)
-  return res.redirect("./urls")
-})
+  const currentUser = users[req.cookies["user_id"]];
+
+  // If there's a currentUser, redirect them away from the login page
+  if (currentUser) {
+    return res.redirect("./urls");
+  }
+
+  // If there's no currentUser, then proceed to render the login page
+  const templateVars = { user: null }; // Since there's no currentUser, set user to null
+  res.render("./login", templateVars);
+});
 
 app.post("/urls", (req, res) => {
   const currentUser = users[req.cookies["user_id"]]
@@ -116,11 +123,11 @@ app.post("/urls/:id/delete", (req, res) => {
   const currentUser = users[req.cookies["user_id"]];
   const id = req.params.id;
   const urlUserId = urlDatabase[id];
-  console.log("id:",urlUserId, "currentuser:",currentUser)
+  console.log("id:", urlUserId, "currentuser:", currentUser)
 
-   if(currentUser.id !== urlUserId.userID){
-   return res.status(401).send('<html><body><h1>Only the creator can delete this link!</h1></body></html>');
-   }
+  if (currentUser.id !== urlUserId.userID) {
+    return res.status(401).send('<html><body><h1>Only the creator can delete this link!</h1></body></html>');
+  }
   delete urlDatabase[id];
   return res.redirect(`/urls`);
 })
@@ -130,9 +137,9 @@ app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const urlUserId = urlDatabase[id];
 
-  if(currentUser.id !== urlUserId.userID){
+  if (currentUser.id !== urlUserId.userID) {
     return res.status(401).send('<html><body><h1>Only the creator can edit this link!</h1></body></html>');
-    }
+  }
   urlUserId.longURL = req.body.longURL;
   return res.redirect(`/urls`)
 })
@@ -140,8 +147,9 @@ app.post("/urls/:id", (req, res) => {
 app.post("/login", (req, res) => { //user login form .
   const { email, password } = req.body
   const user = getUserByEmail(email);
+  console.log(user)
   if (user) {
-    if (password === user.password) {
+    if (bcrypt.compareSync(password, user.password)) {
       res.cookie('user_id', user.id);
       return res.redirect(`/urls`);
     } else {
@@ -152,7 +160,7 @@ app.post("/login", (req, res) => { //user login form .
 
 })
 
-app.post("/logout", (req, res) => { //user login form 
+app.post("/logout", (req, res) => { //user logout button
   res.clearCookie('user_id');
   return res.redirect(`/login`);
 })
@@ -172,8 +180,10 @@ app.post("/register", (req, res) => {
 
   // Everything is fine; proceed with user creation
   const id = generateRandomString();
-  users[id] = { id, email, password };
-
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt);
+  users[id] = { id: id, email: email, password: hash };
+  console.log(users[id]);
   // Set only the user_id in cookie
   res.cookie('user_id', id);
 
@@ -215,3 +225,10 @@ const urlsForUser2 = function (userId) {
   }
   return output;
 }
+
+// const bcryptPassword = function (password) {
+//   const salt = bcrypt.genSaltSync(10);
+//   const hash = bcrypt.hashSync(password, salt);
+//   return hash;
+// }
+// console.log(bcryptPassword('love'));

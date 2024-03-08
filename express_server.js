@@ -204,17 +204,8 @@ const getUserByEmail = (email) => {
   return null;
 }
 
-function urlsForUser(currentUser) {
-  const matchingKeys = [];
-  for (const key in urlDatabase) {
-    if (urlDatabase.hasOwnProperty(key) && urlDatabase[key].userID === currentUser.id) {
-      matchingKeys.push(key);
-    }
-  }
-  return matchingKeys;
-}
 
-function urlsForUser2(userId) {
+const urlsForUser2 = function (userId) {
   const output = {};
   for (const shortId in urlDatabase) {
     const urlObject = urlDatabase[shortId];

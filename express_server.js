@@ -125,8 +125,7 @@ app.post("/urls/:id/delete", (req, res) => {
   const currentUser = users[req.session.user_id];
   const id = req.params.id;
   const urlUserId = urlDatabase[id];
-  console.log("id:", urlUserId, "currentuser:", currentUser)
-
+  
   if (currentUser.id !== urlUserId.userID) {
     return res.status(401).send('<html><body><h1>Only the creator can delete this link!</h1></body></html>');
   }

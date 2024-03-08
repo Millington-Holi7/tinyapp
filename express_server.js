@@ -8,13 +8,21 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "tttt",
+  },
+
+
 };
 
 const users = {
-  userRandomID: {
-    id: "userRandomID",
+  aJ48lW: {
+    id: "aJ48lW",
     email: "user@example.com",
     password: "purple-monkey-dinosaur",
   },
@@ -27,8 +35,14 @@ const users = {
 
 app.get("/urls", (req, res) => {
   const currentUser = users[req.cookies["user_id"]]
-  const templateVars = { urls: urlDatabase, user: currentUser }
-  res.render("urls_index", templateVars)
+  if (!currentUser) {
+    return res.status(404).send(`<html><body><h1>To see URL's, please login or register</h1></body></html>`);
+  }
+
+  const urlsForUser = urlsForUser2(currentUser.id)
+  const templateVars = { urls: urlsForUser, user: currentUser }
+  return res.render("urls_index", templateVars)
+
 });
 
 app.get("/urls/new", (req, res) => {
@@ -43,21 +57,19 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const { id } = req.params; // Extracting the id from the route parameter
-  const longURL = urlDatabase[id];//Attempt to retrieve the longURL using the id
+  const longURL = urlDatabase[id].longURL;//Attempt to retrieve the longURL using the id
   if (!longURL) { // Check if the longURL does not exist for the given id  
     return res.status(404).send("The short URL does not exist.");
   }
-  const currentUser = users[req.cookies["user_id"]]
-  const templateVars = { id: id, longURL: longURL, user: currentUser }
-
-  
-  res.render("urls_show", templateVars)
+  const currentUser = users[req.cookies["user_id"]];
+  const templateVars = { id: id, longURL: longURL, user: currentUser };
+  res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => { //redirect to the URL inputted
 
   const shortURLId = req.params.id; // Extract the :id from the request URL
-  const urlObject = urlsDatabase[shortURLId]; // Assuming urlsDatabase is where you store your URLs
+  const urlObject = urlDatabase[shortURLId]; // Assuming urlsDatabase is where you store your URLs
 
   if (!urlObject) {
     // The short URL ID does not exist in the database, send an error message
@@ -95,39 +107,49 @@ app.post("/urls", (req, res) => {
     res.status(401).send('<html><body><h1>You need to be logged in to shorten URLs!</h1></body></html>');
   } else {
     let id = generateRandomString();
-    urlDatabase[id] = req.body.longURL;
+    urlDatabase[id] = { longURL: req.body.longURL, userID: currentUser.id };
     return res.redirect(`/urls/${id}`) //Redirect to another page 
   }
-
 })
 
 app.post("/urls/:id/delete", (req, res) => {
+  const currentUser = users[req.cookies["user_id"]];
   const id = req.params.id;
+  const urlUserId = urlDatabase[id];
+  console.log("id:",urlUserId, "currentuser:",currentUser)
+
+   if(currentUser.id !== urlUserId.userID){
+   return res.status(401).send('<html><body><h1>Only the creator can delete this link!</h1></body></html>');
+   }
   delete urlDatabase[id];
   return res.redirect(`/urls`);
 })
 
 app.post("/urls/:id", (req, res) => {
+  const currentUser = users[req.cookies["user_id"]];
   const id = req.params.id;
-  urlDatabase[id] = req.body.longURL;
+  const urlUserId = urlDatabase[id];
+
+  if(currentUser.id !== urlUserId.userID){
+    return res.status(401).send('<html><body><h1>Only the creator can edit this link!</h1></body></html>');
+    }
+  urlUserId.longURL = req.body.longURL;
   return res.redirect(`/urls`)
 })
 
 app.post("/login", (req, res) => { //user login form .
-  console.log("req.body:", req.body);
   const { email, password } = req.body
   const user = getUserByEmail(email);
   if (user) {
-    if (password === users[user.id].password) {
+    if (password === user.password) {
       res.cookie('user_id', user.id);
       return res.redirect(`/urls`);
     } else {
-      res.status(400).send("Password doesn't match.");
+      return res.status(400).send("Password doesn't match.");
     }
-  } else {
-    res.status(400).send("Email not found.");
-    return res.redirect(`/register`);
   }
+  return res.status(400).send("Email not found.");
+
 })
 
 app.post("/logout", (req, res) => { //user login form 
@@ -180,4 +202,25 @@ const getUserByEmail = (email) => {
     }
   }
   return null;
+}
+
+function urlsForUser(currentUser) {
+  const matchingKeys = [];
+  for (const key in urlDatabase) {
+    if (urlDatabase.hasOwnProperty(key) && urlDatabase[key].userID === currentUser.id) {
+      matchingKeys.push(key);
+    }
+  }
+  return matchingKeys;
+}
+
+function urlsForUser2(userId) {
+  const output = {};
+  for (const shortId in urlDatabase) {
+    const urlObject = urlDatabase[shortId];
+    if (urlObject.userID === userId) {
+      output[shortId] = urlDatabase[shortId]
+    }
+  }
+  return output;
 }
